@@ -725,6 +725,7 @@ class RecipeManagerGUI extends JFrame {
         startTimerButton.addActionListener(e -> startCookingTimer());
         pauseTimerButton.addActionListener(e -> pauseCookingTimer());
         resetTimerButton.addActionListener(e -> resetCookingTimer());
+        setupCookModeKeyBindings(panel);
 
         return panel;
     }
@@ -807,6 +808,26 @@ class RecipeManagerGUI extends JFrame {
                 openSelectedRecipeLink();
             }
         });
+
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "nextCookStep");
+        actionMap.put("nextCookStep", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (cookStepArea.isShowing()) {
+                    showNextCookStep();
+                }
+            }
+        });
+
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0), "previousCookStep");
+        actionMap.put("previousCookStep", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (cookStepArea.isShowing()) {
+                    showPreviousCookStep();
+                }
+            }
+        });
     }
 
     private void setupListeners() {
@@ -832,6 +853,23 @@ class RecipeManagerGUI extends JFrame {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     viewRecipe();
+                }
+            }
+        });
+        recipeList.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+
+                if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                    Recipe selected = recipeList.getSelectedValue();
+
+                    if (selected != null) {
+                        if (selected.getLink() == null || selected.getLink().isBlank()) {
+                            showError("This recipe has no link.");
+                        } else {
+                            openLink(selected.getLink());
+                        }
+                    }
                 }
             }
         });
@@ -1827,6 +1865,18 @@ class RecipeManagerGUI extends JFrame {
             }
         });
 
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "toggleTimer");
+        actionMap.put("toggleTimer", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (cookingTimer != null && cookingTimer.isRunning()) {
+                    pauseCookingTimer();
+                } else {
+                    startCookingTimer();
+                }
+            }
+        });
+
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "exitCookMode");
         actionMap.put("exitCookMode", new AbstractAction() {
             @Override
@@ -1897,6 +1947,7 @@ class RecipeManagerGUI extends JFrame {
 
         JTextArea stepArea = new JTextArea(currentCookSteps.get(currentCookStepIndex));
         stepArea.setEditable(false);
+        stepArea.setFocusable(false);
         stepArea.setLineWrap(true);
         stepArea.setWrapStyleWord(true);
         stepArea.setFont(new Font("SansSerif", Font.PLAIN, 42));
@@ -1973,6 +2024,7 @@ class RecipeManagerGUI extends JFrame {
 
         fullscreenCookDialog.setBounds(screenBounds);
         fullscreenCookDialog.setAlwaysOnTop(true);
+        fullscreenCookDialog.getRootPane().requestFocusInWindow();
         fullscreenCookDialog.setVisible(true);
     }
 
