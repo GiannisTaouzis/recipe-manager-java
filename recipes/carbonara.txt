@@ -1,0 +1,8 @@
+Name: carbonara
+Cuisine: ITALIAN
+Ingredients: eggs, guancalle, pepper, garlic, pasta, pecorino romano, parmesan olive oil
+Preparation Time: 40 mins
+Complexity: Complex
+Instructions:
+cook the pasta 
+add a pan to high heat put the olive oil then the garlic guancalle and pepper and let them cook

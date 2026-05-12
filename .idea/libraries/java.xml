@@ -1,0 +1,29 @@
+<component name="libraryTable">
+  <library name="java">
+    <CLASSES />
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/buildSrc/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-core/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-core/src/main/java9" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-core/src/test/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-demo/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-extras/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-fonts/flatlaf-fonts-inter/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-fonts/flatlaf-fonts-inter/src/test/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-fonts/flatlaf-fonts-jetbrains-mono/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-fonts/flatlaf-fonts-jetbrains-mono/src/test/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-fonts/flatlaf-fonts-roboto-mono/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-fonts/flatlaf-fonts-roboto-mono/src/test/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-fonts/flatlaf-fonts-roboto/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-fonts/flatlaf-fonts-roboto/src/test/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-intellij-themes/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-jide-oss/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-natives/flatlaf-natives-jna/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-swingx/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-testing/flatlaf-testing-modular-app/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-testing/src/main/java" />
+      <root url="file://$USER_HOME$/Downloads/FlatLaf-3.7.1/FlatLaf-3.7.1/flatlaf-theme-editor/src/main/java" />
+    </SOURCES>
+  </library>
+</component>
