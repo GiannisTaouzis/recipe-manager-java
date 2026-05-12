@@ -318,6 +318,7 @@ class RecipeManagerGUI extends JFrame {
         instructionsArea.setLineWrap(true);
         instructionsArea.setWrapStyleWord(true);
         instructionsArea.setRows(10);
+        instructionsArea.setToolTipText("Press Enter after each step. Cook Mode uses each new line as a separate step.");
 
         JPanel basicInfoPanel = new JPanel(new GridBagLayout());
         basicInfoPanel.setBorder(BorderFactory.createTitledBorder("Basic Information"));
@@ -368,7 +369,7 @@ class RecipeManagerGUI extends JFrame {
         gbc.gridy = y;
         gbc.weighty = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        contentPanel.add(new JLabel("Instructions:"), gbc);
+        contentPanel.add(new JLabel("Instructions (one step per line):"), gbc);
 
         gbc.gridx = 1;
         gbc.fill = GridBagConstraints.BOTH;
@@ -1786,14 +1787,13 @@ class RecipeManagerGUI extends JFrame {
             return List.of("No instructions available for this recipe.");
         }
 
-        List<String> steps = Arrays.stream(instructions.split("\r?\n|(?<=[.!?])\s+"))
+        List<String> steps = Arrays.stream(instructions.split("\\R+"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
 
         return steps.isEmpty() ? List.of(instructions.trim()) : steps;
     }
-
     private void updateCookStepDisplay() {
         if (currentCookSteps == null || currentCookSteps.isEmpty()) {
             cookStepArea.setText("Load a recipe to begin cooking.");
