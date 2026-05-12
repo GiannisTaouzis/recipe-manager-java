@@ -35,7 +35,8 @@ Arrow keys to move to next slide in cook mode
 
 ## How to Run
 
-Open the project in IntelliJ IDEA and run:
+Have java 24 downloaded and download the jar file
+double click the jar file
 
 ```java
 Main.java
