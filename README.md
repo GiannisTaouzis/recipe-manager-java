@@ -23,6 +23,15 @@ A Java Swing desktop application for managing recipes, images, meal planning, sh
 - FlatLaf
 - JSON file storage
 
+## Shortcuts
+Ctrl + F → focus search
+Ctrl + N → clear form / new recipe
+Ctrl + S → save
+Ctrl + D → dark mode
+Delete → delete selected recipe
+Ctrl + R → random recipe
+Ctrl + L → open selected recipe link
+
 ## How to Run
 
 Open the project in IntelliJ IDEA and run:
