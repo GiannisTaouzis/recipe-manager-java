@@ -31,6 +31,7 @@ Ctrl + D → dark mode
 Delete → delete selected recipe
 Ctrl + R → random recipe
 Ctrl + L → open selected recipe link
+Arrow keys to move to next slide in cook mode
 
 ## How to Run
 
