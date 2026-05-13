@@ -38,5 +38,4 @@ Arrow keys to move to next slide in cook mode
 Have java 24 downloaded and download the jar file
 double click the jar file
 
-```java
-Main.java
+
