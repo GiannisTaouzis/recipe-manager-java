@@ -1,3 +1,0 @@
-enum Cuisine {
-    ITALIAN, INDIAN, CHINESE, AMERICAN, MEXICAN, GREEK
-}

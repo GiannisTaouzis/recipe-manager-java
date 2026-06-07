@@ -50,6 +50,9 @@ class RecipeManagerGUI extends JFrame {
     private Recipe editingRecipe = null;
     private boolean darkMode = false;
 
+    private Recipe lastDeletedRecipe = null;
+    private Map<String, String> lastDeletedMealPlanEntries = new LinkedHashMap<>();
+
     private final JTextField nameField = new JTextField();
     private final JComboBox<Cuisine> cuisineBox = new JComboBox<>(Cuisine.values());
     private final JComboBox<RecipeCategory> categoryBox = new JComboBox<>(RecipeCategory.values());
@@ -219,6 +222,7 @@ class RecipeManagerGUI extends JFrame {
         JButton viewButton = new JButton("View Details");
         JButton editButton = new JButton("Edit Recipe");
         JButton deleteButton = new JButton("Delete Recipe");
+        JButton undoDeleteButton = new JButton("Undo Delete");
         JButton toggleFavoriteButton = new JButton("Toggle Favorite");
         JButton openSelectedLinkButton = new JButton("Open Link");
         JButton randomButton = new JButton("Random Recipe");
@@ -260,6 +264,7 @@ class RecipeManagerGUI extends JFrame {
         addSidebarButton(sideBar, viewButton);
         addSidebarButton(sideBar, editButton);
         addSidebarButton(sideBar, deleteButton);
+        addSidebarButton(sideBar, undoDeleteButton);
         addSidebarButton(sideBar, toggleFavoriteButton);
 
         sideBar.add(Box.createVerticalStrut(18));
@@ -290,6 +295,7 @@ class RecipeManagerGUI extends JFrame {
         toggleFavoriteButton.addActionListener(e -> toggleFavorite());
         editButton.addActionListener(e -> editSelectedRecipe());
         deleteButton.addActionListener(e -> deleteSelectedRecipe());
+        undoDeleteButton.addActionListener(e -> undoDeleteRecipe());
         randomButton.addActionListener(e -> showRandomRecipe());
         exportButton.addActionListener(e -> exportBackup());
         importButton.addActionListener(e -> importBackup());
@@ -828,6 +834,17 @@ class RecipeManagerGUI extends JFrame {
                 }
             }
         });
+
+// Ctrl + Z = Undo Delete
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK), "undoDelete");
+        actionMap.put("undoDelete", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                undoDeleteRecipe();
+            }
+        });
+
+
     }
 
     private void setupListeners() {
@@ -1385,6 +1402,16 @@ class RecipeManagerGUI extends JFrame {
         );
 
         if (confirm == JOptionPane.YES_OPTION) {
+
+            lastDeletedRecipe = recipe;
+            lastDeletedMealPlanEntries = new LinkedHashMap<>();
+
+            for (Map.Entry<String, String> entry : mealPlan.entrySet()) {
+                if (entry.getValue().equals(recipe.getName())) {
+                    lastDeletedMealPlanEntries.put(entry.getKey(), entry.getValue());
+                }
+            }
+
             recipes.remove(recipe);
             mealPlan.entrySet().removeIf(entry -> entry.getValue().equals(recipe.getName()));
 
@@ -1398,9 +1425,36 @@ class RecipeManagerGUI extends JFrame {
             saveData();
             filterRecipes();
             refreshMealRecipeBox();
+            refreshCookRecipeBox();
             refreshWeeklyPlanArea();
             refreshStatisticsDashboard();
         }
+    }
+    private void undoDeleteRecipe() {
+        if (lastDeletedRecipe == null) {
+            showError("There is no deleted recipe to restore.");
+            return;
+        }
+
+        recipes.add(lastDeletedRecipe);
+
+        for (Map.Entry<String, String> entry : lastDeletedMealPlanEntries.entrySet()) {
+            mealPlan.put(entry.getKey(), entry.getValue());
+        }
+
+        saveData();
+        filterRecipes();
+        refreshMealRecipeBox();
+        refreshCookRecipeBox();
+        refreshWeeklyPlanArea();
+        refreshStatisticsDashboard();
+
+        recipeList.setSelectedValue(lastDeletedRecipe, true);
+
+        JOptionPane.showMessageDialog(this, "Deleted recipe restored.");
+
+        lastDeletedRecipe = null;
+        lastDeletedMealPlanEntries.clear();
     }
 
     private void toggleFavorite() {

@@ -1,20 +1,6 @@
 {
   "recipes": [
     {
-      "name": "ριζοτο μανηταριων",
-      "cuisine": "ITALIAN",
-      "category": "MAIN_COURSE",
-      "ingredients": ["Open the link to see ingredients"],
-      "prepTime": 30,
-      "calories": 0,
-      "instructions": "Open the link to see the full recipe.",
-      "tags": ["link", "online"],
-      "link": "https://akispetretzikis.com/recipe/9414/rizoto-me-duxelle-manitariwn",
-      "imagePath": "",
-      "favorite": false,
-      "rating": 0
-    },
-    {
       "name": "tal",
       "cuisine": "ITALIAN",
       "category": "MAIN_COURSE",
@@ -29,8 +15,5 @@
       "rating": 0
     }
   ],
-  "mealPlan": {
-    "MONDAY_BREAKFAST": "ριζοτο μανηταριων",
-    "MONDAY_LUNCH": "ριζοτο μανηταριων"
-  }
+  "mealPlan": {}
 }
