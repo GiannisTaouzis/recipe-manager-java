@@ -1,6 +1,9 @@
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -2369,62 +2372,79 @@ class RecipeManagerGUI extends JFrame {
         chooser.setSelectedFile(new File(recipe.getName().replaceAll("[^a-zA-Z0-9-_]", "_") + ".pdf"));
 
         int result = chooser.showSaveDialog(this);
-
-        if (result != JFileChooser.APPROVE_OPTION) {
-            return;
-        }
+        if (result != JFileChooser.APPROVE_OPTION) return;
 
         File file = chooser.getSelectedFile();
-
         if (!file.getName().toLowerCase().endsWith(".pdf")) {
             file = new File(file.getAbsolutePath() + ".pdf");
         }
 
         try (PDDocument document = new PDDocument()) {
+            PDFont regularFont = PDType0Font.load(
+                    document,
+                    getClass().getResourceAsStream("/fonts/DejaVuSans.ttf")
+            );
+
+            PDFont boldFont = PDType0Font.load(
+                    document,
+                    getClass().getResourceAsStream("/fonts/DejaVuSans-Bold.ttf")
+            );
+
             PDPage page = new PDPage();
             document.addPage(page);
 
-            PDPageContentStream content = new PDPageContentStream(document, page);
+            PDFWriteState state = new PDFWriteState(
+                    new PDPageContentStream(document, page),
+                    750
+            );
 
-            float y = 750;
             float margin = 50;
-            float lineHeight = 18;
 
-            content.beginText();
-            content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 20);
-            content.newLineAtOffset(margin, y);
-            content.showText(recipe.getName());
-            content.endText();
+            state = writePDFLineWithPageBreak(document, state, regularFont, boldFont,
+                    recipe.getName(), margin, true, 20);
 
-            y -= 35;
+            state.y -= 15;
 
-            y = writePDFLine(content, "Cuisine: " + recipe.getCuisine(), margin, y, true);
-            y = writePDFLine(content, "Category: " + recipe.getCategory(), margin, y, false);
-            y = writePDFLine(content, "Prep Time: " + recipe.getPrepTime() + " mins", margin, y, false);
-            y = writePDFLine(content, "Calories: " + recipe.getCalories() + " kcal", margin, y, false);
-            y = writePDFLine(content, "Rating: " + recipe.getRating() + "/5", margin, y, false);
+            state = writePDFLineWithPageBreak(document, state, regularFont, boldFont,
+                    "Cuisine: " + recipe.getCuisine(), margin, true, 12);
+            state = writePDFLineWithPageBreak(document, state, regularFont, boldFont,
+                    "Category: " + recipe.getCategory(), margin, false, 12);
+            state = writePDFLineWithPageBreak(document, state, regularFont, boldFont,
+                    "Prep Time: " + recipe.getPrepTime() + " mins", margin, false, 12);
+            state = writePDFLineWithPageBreak(document, state, regularFont, boldFont,
+                    "Calories: " + recipe.getCalories() + " kcal", margin, false, 12);
+            state = writePDFLineWithPageBreak(document, state, regularFont, boldFont,
+                    "Rating: " + recipe.getRating() + "/5", margin, false, 12);
 
-            y -= 15;
-            y = writePDFLine(content, "Ingredients:", margin, y, true);
+            state.y -= 15;
+
+            state = writePDFLineWithPageBreak(document, state, regularFont, boldFont,
+                    "Ingredients:", margin, true, 12);
 
             for (String ingredient : recipe.getIngredients()) {
-                y = writePDFLine(content, "- " + ingredient, margin + 20, y, false);
+                state = writeWrappedPDFText(document, state, regularFont, boldFont,
+                        "- " + ingredient, margin + 20, false, 12, 38);
             }
 
-            y -= 15;
-            y = writePDFLine(content, "Instructions:", margin, y, true);
+            state.y -= 15;
+
+            state = writePDFLineWithPageBreak(document, state, regularFont, boldFont,
+                    "Instructions:", margin, true, 12);
 
             String[] instructionLines = recipe.getInstructions().split("\\R");
             for (String line : instructionLines) {
                 if (!line.trim().isEmpty()) {
-                    y = writePDFLine(content, line.trim(), margin + 20, y, false);
+                    state = writeWrappedPDFText(document, state, regularFont, boldFont,
+                            line.trim(), margin + 20, false, 12, 38);
                 }
             }
 
-            y -= 15;
-            y = writePDFLine(content, "Tags: " + String.join(", ", recipe.getTags()), margin, y, false);
+            state.y -= 15;
 
-            content.close();
+            state = writeWrappedPDFText(document, state, regularFont, boldFont,
+                    "Tags: " + String.join(", ", recipe.getTags()), margin, false, 12, 38);
+
+            state.content.close();
             document.save(file);
 
             JOptionPane.showMessageDialog(this, "PDF exported successfully.");
@@ -2433,21 +2453,109 @@ class RecipeManagerGUI extends JFrame {
             showError("Could not export PDF: " + e.getMessage());
         }
     }
+    private static class PDFWriteState {
+        PDPageContentStream content;
+        float y;
 
-    private float writePDFLine(PDPageContentStream content, String text, float x, float y, boolean bold) throws Exception {
-        content.beginText();
+        PDFWriteState(PDPageContentStream content, float y) {
+            this.content = content;
+            this.y = y;
+        }
+    }
 
-        if (bold) {
-            content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 12);
-        } else {
-            content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+    private PDFWriteState writePDFLineWithPageBreak(
+            PDDocument document,
+            PDFWriteState state,
+            PDFont regularFont,
+            PDFont boldFont,
+            String text,
+            float x,
+            boolean bold,
+            int fontSize
+    ) throws Exception {
+
+        if (state.y < 70) {
+            state.content.close();
+
+            PDPage newPage = new PDPage();
+            document.addPage(newPage);
+
+            state.content = new PDPageContentStream(document, newPage);
+            state.y = 750;
         }
 
-        content.newLineAtOffset(x, y);
-        content.showText(text.replace("\n", " ").replace("\r", " "));
-        content.endText();
+        state.content.beginText();
+        state.content.setFont(bold ? boldFont : regularFont, fontSize);
+        state.content.newLineAtOffset(x, state.y);
+        state.content.showText(cleanPDFText(text));
+        state.content.endText();
 
-        return y - 18;
+        state.y -= 18;
+
+        return state;
+    }
+
+    private PDFWriteState writeWrappedPDFText(
+            PDDocument document,
+            PDFWriteState state,
+            PDFont regularFont,
+            PDFont boldFont,
+            String text,
+            float x,
+            boolean bold,
+            int fontSize,
+            int maxChars
+    ) throws Exception {
+
+        for (String line : wrapText(text, maxChars)) {
+            state = writePDFLineWithPageBreak(
+                    document,
+                    state,
+                    regularFont,
+                    boldFont,
+                    line,
+                    x,
+                    bold,
+                    fontSize
+            );
+        }
+
+        return state;
+    }
+
+    private List<String> wrapText(String text, int maxChars) {
+        List<String> lines = new ArrayList<>();
+        String[] words = text.split("\\s+");
+        StringBuilder currentLine = new StringBuilder();
+
+        for (String word : words) {
+            if (currentLine.length() + word.length() + 1 > maxChars) {
+                lines.add(currentLine.toString());
+                currentLine = new StringBuilder(word);
+            } else {
+                if (!currentLine.isEmpty()) {
+                    currentLine.append(" ");
+                }
+                currentLine.append(word);
+            }
+        }
+
+        if (!currentLine.isEmpty()) {
+            lines.add(currentLine.toString());
+        }
+
+        return lines;
+    }
+
+    private String cleanPDFText(String text) {
+        if (text == null) {
+            return "";
+        }
+
+        return text
+                .replace("\n", " ")
+                .replace("\r", " ")
+                .replace("\t", " ");
     }
 
     private void importBackup() {
