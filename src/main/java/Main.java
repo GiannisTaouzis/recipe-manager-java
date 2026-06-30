@@ -1,6 +1,12 @@
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
@@ -228,6 +234,7 @@ class RecipeManagerGUI extends JFrame {
         JButton randomButton = new JButton("Random Recipe");
         JButton exportButton = new JButton("Export Backup");
         JButton importButton = new JButton("Import Backup");
+        JButton exportPdfButton = new JButton("Export Recipe PDF");
 
         Dimension sideButtonSize = new Dimension(150, 34);
         viewButton.setMaximumSize(sideButtonSize);
@@ -238,6 +245,7 @@ class RecipeManagerGUI extends JFrame {
         randomButton.setMaximumSize(sideButtonSize);
         exportButton.setMaximumSize(sideButtonSize);
         importButton.setMaximumSize(sideButtonSize);
+        exportPdfButton.setMaximumSize(sideButtonSize);
 
         JPanel sideBar = new JPanel();
         sideBar.setLayout(new BoxLayout(sideBar, BoxLayout.Y_AXIS));
@@ -273,6 +281,7 @@ class RecipeManagerGUI extends JFrame {
         sideBar.add(toolsLabel);
         sideBar.add(Box.createVerticalStrut(8));
         addSidebarButton(sideBar, openSelectedLinkButton);
+        addSidebarButton(sideBar, exportPdfButton);
         addSidebarButton(sideBar, randomButton);
 
         sideBar.add(Box.createVerticalGlue());
@@ -292,6 +301,7 @@ class RecipeManagerGUI extends JFrame {
 
         viewButton.addActionListener(e -> viewRecipe());
         openSelectedLinkButton.addActionListener(e -> openSelectedRecipeLink());
+        exportPdfButton.addActionListener(e -> exportRecipeToPDF());
         toggleFavoriteButton.addActionListener(e -> toggleFavorite());
         editButton.addActionListener(e -> editSelectedRecipe());
         deleteButton.addActionListener(e -> deleteSelectedRecipe());
@@ -464,9 +474,11 @@ class RecipeManagerGUI extends JFrame {
         JButton searchWebButton = new JButton("Search Recipe Web");
         JButton openLinkButton = new JButton("Open Link");
         JButton addFromLinkButton = new JButton("Add Recipe from Link");
+        JButton importFromTextButton = new JButton("Import from Text");
         leftButtons.add(searchWebButton);
         leftButtons.add(openLinkButton);
         leftButtons.add(addFromLinkButton);
+        leftButtons.add(importFromTextButton);
 
         JPanel rightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         JButton clearButton = new JButton("Clear Form");
@@ -488,6 +500,7 @@ class RecipeManagerGUI extends JFrame {
         searchWebButton.addActionListener(e -> searchWeb());
         openLinkButton.addActionListener(e -> openLinkFromField());
         addFromLinkButton.addActionListener(e -> addRecipeFromLink());
+        importFromTextButton.addActionListener(e -> importRecipeFromText());
         clearButton.addActionListener(e -> clearForm());
         chooseImageButton.addActionListener(e -> chooseImage());
         removeImageButton.addActionListener(e -> removeImage());
@@ -1066,6 +1079,139 @@ class RecipeManagerGUI extends JFrame {
         } catch (NumberFormatException e) {
             showError("Preparation time and calories must be numbers if you fill them.");
         }
+    }
+
+    private void importRecipeFromText() {
+        JTextArea textArea = new JTextArea(20, 50);
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                new JScrollPane(textArea),
+                "Paste Recipe Text",
+                JOptionPane.OK_CANCEL_OPTION
+        );
+
+        if (result != JOptionPane.OK_OPTION) return;
+
+        String text = textArea.getText().trim();
+
+        if (text.isEmpty()) {
+            showError("No text entered.");
+            return;
+        }
+
+        parseRecipeTextToForm(text);
+    }
+
+    private void parseRecipeTextToForm(String text) {
+        String[] lines = text.split("\\R");
+
+        StringBuilder ingredients = new StringBuilder();
+        StringBuilder instructions = new StringBuilder();
+
+        boolean readingIngredients = false;
+        boolean readingInstructions = false;
+
+        String detectedName = "";
+
+        for (String rawLine : lines) {
+            String line = rawLine.trim();
+
+            if (line.isEmpty()) {
+                continue;
+            }
+
+            String lower = line.toLowerCase();
+
+            if (detectedName.isEmpty()
+                    && !lower.contains("ingredients")
+                    && !lower.contains("instructions")
+                    && !lower.contains("method")
+                    && !lower.contains("directions")
+                    && !lower.contains("υλικά")
+                    && !lower.contains("εκτέλεση")) {
+                detectedName = line;
+                continue;
+            }
+
+            if (lower.contains("ingredients") || lower.contains("υλικά")) {
+                readingIngredients = true;
+                readingInstructions = false;
+                continue;
+            }
+
+            if (lower.contains("instructions")
+                    || lower.contains("method")
+                    || lower.contains("directions")
+                    || lower.contains("εκτέλεση")) {
+                readingIngredients = false;
+                readingInstructions = true;
+                continue;
+            }
+
+            if (readingIngredients) {
+                ingredients.append(line.replaceFirst("^[-•*]\\s*", "")).append("\n");
+            } else if (readingInstructions) {
+                instructions.append(line.replaceFirst("^[-•*]\\s*", "")).append("\n");
+            }
+        }
+
+        int detectedPrepTime = detectPrepTime(text);
+
+        if (!detectedName.isEmpty()) {
+            nameField.setText(detectedName);
+        }
+
+        if (!ingredients.isEmpty()) {
+            ingredientsField.setText(ingredients.toString().trim());
+        }
+
+        if (!instructions.isEmpty()) {
+            instructionsArea.setText(instructions.toString().trim());
+        }
+
+        if (detectedPrepTime > 0) {
+            prepTimeField.setText(String.valueOf(detectedPrepTime));
+        }
+
+        tagsField.setText(generateTagsFromText(text));
+
+        JOptionPane.showMessageDialog(this, "Recipe text imported. Please review the fields before saving.");
+    }
+
+    private int detectPrepTime(String text) {
+        String lower = text.toLowerCase();
+
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+)\\s*(minutes|minute|mins|min|λεπτά|λεπτο)");
+        java.util.regex.Matcher matcher = pattern.matcher(lower);
+
+        if (matcher.find()) {
+            try {
+                return Integer.parseInt(matcher.group(1));
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+
+        return 0;
+    }
+
+    private String generateTagsFromText(String text) {
+        String lower = text.toLowerCase();
+        List<String> tags = new ArrayList<>();
+
+        if (lower.contains("chicken") || lower.contains("κοτόπουλο")) tags.add("chicken");
+        if (lower.contains("pasta") || lower.contains("μακαρόνια") || lower.contains("ζυμαρικά")) tags.add("pasta");
+        if (lower.contains("rice") || lower.contains("ρύζι")) tags.add("rice");
+        if (lower.contains("beef") || lower.contains("μοσχάρι")) tags.add("beef");
+        if (lower.contains("pork") || lower.contains("χοιρινό")) tags.add("pork");
+        if (lower.contains("salad") || lower.contains("σαλάτα")) tags.add("salad");
+        if (lower.contains("dessert") || lower.contains("γλυκό")) tags.add("dessert");
+        if (lower.contains("healthy") || lower.contains("υγιεινό")) tags.add("healthy");
+
+        return String.join(", ", tags);
     }
 
     // Allows the user to choose an image from the computer
@@ -2208,6 +2354,100 @@ class RecipeManagerGUI extends JFrame {
                 showError("Could not export backup: " + e.getMessage());
             }
         }
+    }
+
+    private void exportRecipeToPDF() {
+        Recipe recipe = recipeList.getSelectedValue();
+
+        if (recipe == null) {
+            showError("Select a recipe first.");
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Save Recipe as PDF");
+        chooser.setSelectedFile(new File(recipe.getName().replaceAll("[^a-zA-Z0-9-_]", "_") + ".pdf"));
+
+        int result = chooser.showSaveDialog(this);
+
+        if (result != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File file = chooser.getSelectedFile();
+
+        if (!file.getName().toLowerCase().endsWith(".pdf")) {
+            file = new File(file.getAbsolutePath() + ".pdf");
+        }
+
+        try (PDDocument document = new PDDocument()) {
+            PDPage page = new PDPage();
+            document.addPage(page);
+
+            PDPageContentStream content = new PDPageContentStream(document, page);
+
+            float y = 750;
+            float margin = 50;
+            float lineHeight = 18;
+
+            content.beginText();
+            content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 20);
+            content.newLineAtOffset(margin, y);
+            content.showText(recipe.getName());
+            content.endText();
+
+            y -= 35;
+
+            y = writePDFLine(content, "Cuisine: " + recipe.getCuisine(), margin, y, true);
+            y = writePDFLine(content, "Category: " + recipe.getCategory(), margin, y, false);
+            y = writePDFLine(content, "Prep Time: " + recipe.getPrepTime() + " mins", margin, y, false);
+            y = writePDFLine(content, "Calories: " + recipe.getCalories() + " kcal", margin, y, false);
+            y = writePDFLine(content, "Rating: " + recipe.getRating() + "/5", margin, y, false);
+
+            y -= 15;
+            y = writePDFLine(content, "Ingredients:", margin, y, true);
+
+            for (String ingredient : recipe.getIngredients()) {
+                y = writePDFLine(content, "- " + ingredient, margin + 20, y, false);
+            }
+
+            y -= 15;
+            y = writePDFLine(content, "Instructions:", margin, y, true);
+
+            String[] instructionLines = recipe.getInstructions().split("\\R");
+            for (String line : instructionLines) {
+                if (!line.trim().isEmpty()) {
+                    y = writePDFLine(content, line.trim(), margin + 20, y, false);
+                }
+            }
+
+            y -= 15;
+            y = writePDFLine(content, "Tags: " + String.join(", ", recipe.getTags()), margin, y, false);
+
+            content.close();
+            document.save(file);
+
+            JOptionPane.showMessageDialog(this, "PDF exported successfully.");
+
+        } catch (Exception e) {
+            showError("Could not export PDF: " + e.getMessage());
+        }
+    }
+
+    private float writePDFLine(PDPageContentStream content, String text, float x, float y, boolean bold) throws Exception {
+        content.beginText();
+
+        if (bold) {
+            content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 12);
+        } else {
+            content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+        }
+
+        content.newLineAtOffset(x, y);
+        content.showText(text.replace("\n", " ").replace("\r", " "));
+        content.endText();
+
+        return y - 18;
     }
 
     private void importBackup() {
